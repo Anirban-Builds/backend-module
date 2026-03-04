@@ -1,0 +1,58 @@
+import ApiError from "../utils/ApiError.js"
+import AsyncHandler from "../utils/AsyncHandler.js"
+import { GithubUser } from "../models/githubuser.model.js"
+import { User } from "../models/user.model.js"
+import jwt from "jsonwebtoken"
+import dotenv from "dotenv"
+
+dotenv.config({})
+
+// for Github database
+const verifyGithubJWT =
+    AsyncHandler(async(req, res, next) =>
+        {
+
+        const token = req.cookies?.gh_accesstoken || req.header("Authorization")?.replace("Bearer ", "")
+
+        if(!token){
+             return res.status(401).send()
+            // throw new ApiError(401, "Unauthorized request")
+        }
+
+        const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
+
+        const user = await GithubUser.findById(decodedToken?._id).select("-refreshtoken")
+
+        if(!user){
+            throw new ApiError(401, "Invalid access token")
+        }
+
+        req.user = user
+
+        next()
+        })
+
+//for normal users
+const verifyJWT =
+    AsyncHandler(async(req, res, next) =>
+        {
+        const token = req.cookies?.accesstoken || req.header("Authorization")?.replace("Bearer ", "")
+
+        if(!token){
+            return res.status(401).send()
+        }
+
+        const decodedToken = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
+
+        const user = await User.findById(decodedToken?._id).select("-refreshtoken")
+
+        if(!user){
+            throw new ApiError(401, "Invalid access token")
+        }
+
+        req.user = user
+
+        next()
+        })
+
+export {verifyGithubJWT, verifyJWT}

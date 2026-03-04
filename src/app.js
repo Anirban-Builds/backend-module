@@ -23,5 +23,9 @@ app.use(cookieParser())
 app.use(`/api/${process.env.API_VERSION}/projects`, projectsRoutes)
 app.use(`/api/${process.env.API_VERSION}/users`, UserRoutes)
 
+app.get("/", (req, res) => {
+  res.send("Backend is Live 🚀");
+});
+
 
 export default app

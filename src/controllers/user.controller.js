@@ -9,8 +9,6 @@ import cloudUpload from "../utils/cloudinary.js"
 const options = {
         httpOnly: true,
         secure: true,
-        sameSite: 'lax',
-        domain: '.anirbanbuilds.online'
     }
 
 const genToken = async (userid) => {
@@ -72,7 +70,6 @@ const registerUser = AsyncHandler(async(req, res)=>{
 
     return res
     .status(OK)
-    .set('Cache-Control', 'no-store, no-cache, must-revalidate')
     .cookie("accesstoken", access_token, options)
     .cookie("refreshtoken", refresh_token, options)
     .json(new ApiResponse(

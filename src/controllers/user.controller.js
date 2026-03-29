@@ -9,8 +9,6 @@ import cloudUpload from "../utils/cloudinary.js"
 const options = {
         httpOnly: true,
         secure: true,
-        sameSite : "none",
-        domain: ".anirbanbuilds.online"
     }
 
 const genToken = async (userid) => {

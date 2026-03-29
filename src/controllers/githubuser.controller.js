@@ -121,6 +121,7 @@ const params = "?client_id=" + payload.client_id +
 
     return res
     .status(OK)
+    .set('Cache-Control', 'no-store, no-cache, must-revalidate')
     .cookie("gh_accesstoken", access_token, options)
     .cookie("gh_refreshtoken", refresh_token, options)
     .json(new ApiResponse(

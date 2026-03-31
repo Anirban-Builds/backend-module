@@ -4,7 +4,6 @@ import ApiError from "../utils/ApiError.js"
 import ApiResponse from "../utils/ApiResponse.js"
 import cloudUpload from "../utils/cloudinary.js"
 import { OK } from "../constants.js"
-import { projectsMap } from "../projects/projectMap.js"
 
 const Addproject = AsyncHandler(async (req, res) => {
 
@@ -138,13 +137,4 @@ const GetprojTitles = AsyncHandler(async(req, res)=>{
     )
 })
 
-const RunProject = AsyncHandler(async(req, res) => {
-     const projectId = req.params['projectid']
-     const project = projectsMap[projectId]
-     if (!project) {
-        throw new ApiError(404, `Project '${projectId}' not found`)
-    }
-    project(req, res)
-})
-
-export {Addproject, Getprojects, GetprojTitles, RunProject}
+export {Addproject, Getprojects, GetprojTitles}

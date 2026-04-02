@@ -28,7 +28,7 @@ UserRouter.route('/signup').post(upload.single("coverimage"), registerUser)
 UserRouter.route('/logout').get(verifyJWT, logoutUser)
 UserRouter.route('/users').get(verifyJWT, getCurrentUser)
 UserRouter.route('/check-uname').get(checkUsername)
-UserRouter.route('/update-pwd').post(verifyJWT, updatePassword)
+UserRouter.route('/update-pwd').patch(verifyJWT, updatePassword)
 UserRouter.route('/update-cover-image').patch(verifyJWT, upload.single("coverimage"), updateCoverImage)
 
 export default UserRouter

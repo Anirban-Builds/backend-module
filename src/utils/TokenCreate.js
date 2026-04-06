@@ -1,7 +1,4 @@
-import dotenv from "dotenv"
 import jwt from "jsonwebtoken"
-
-dotenv.config({})
 
 function TokenCreate(payload, accessToken=true) {
     return jwt.sign(

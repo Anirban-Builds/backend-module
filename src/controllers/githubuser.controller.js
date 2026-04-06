@@ -3,9 +3,7 @@ import ApiError from "../utils/ApiError.js"
 import ApiResponse from "../utils/ApiResponse.js"
 import {GithubUser} from "../models/githubuser.model.js"
 import { OK } from "../constants.js"
-import dotenv from "dotenv"
-
-dotenv.config({})
+import { sendOTPEmail } from "../utils/ResetPwdMail.js"
 
 const options = {
         httpOnly: true,
@@ -72,6 +70,7 @@ const params = "?client_id=" + payload.client_id +
             username : userData.login,
             ghEmail : githubEmail,
             avatar : userData.avatar_url,
+            usertype : [false, true]
         })
 
         const createdUser = await GithubUser.findById(newUser._id).select("-refreshtoken")
@@ -80,16 +79,9 @@ const params = "?client_id=" + payload.client_id +
         throw new ApiError(500, "Something went wrong while registering the user")
     }
 
-    const setusertype = await GithubUser.updateOne(
-        {_id : newUser._id},
-        {$set : {"usertype.1" : true}}
-    )
-
-     if (!setusertype) {
-        throw new ApiError(500, "Something went wrong while registering the user")
-    }
-
     const {access_token, refresh_token} = await genToken(newUser._id)
+
+    console.log("github user created")
 
     return res
     .status(OK)
@@ -98,15 +90,15 @@ const params = "?client_id=" + payload.client_id +
     .json(new ApiResponse(
         OK,
         {
-            username: newUser.username,
-            ghEmail : newUser.ghEmail,
-            avatar : newUser.avatar,
-            masteruser : newUser.masteruser,
-            coverimage : newUser.coverimage,
-            userExists : false,
+            username: createdUser.username,
+            ghEmail : createdUser.ghEmail,
+            avatar : createdUser.avatar,
+            masteruser : createdUser.masteruser,
+            coverimage : createdUser.coverimage,
+            userExists : true,
             oldUser : false,
             firstload : true,
-            usertype : newUser.usertype,
+            usertype : createdUser.usertype,
         },
         "Github user sign up success"
     ))
@@ -186,4 +178,59 @@ const LogoutGithubUser = AsyncHandler(async(req, res) => {
 
 })
 
-export {GithubLogin, GithubCurrentUser, LogoutGithubUser}
+const deleteGithubUser = AsyncHandler(async(req, res)=>{
+    const {otp} = req.body
+    const userId = req.user?._id
+    const user = await GithubUser.findById(userId)
+     if (!user) {
+        throw new ApiError(404, "Github User not found")
+    }
+
+    if (!user.otpExpiry || user.otpExpiry < Date.now()) {
+        throw new ApiError(400, "OTP expired!")
+    }
+
+    const otpvalid = await user.isOTPCorrect(otp)
+    if(!otpvalid){
+        throw new ApiError(400, "OTP not valid")
+    }
+
+    await user.deleteOne()
+    console.log("github user deleted")
+
+    return res
+    .status(200)
+    .clearCookie("accesstoken", options)
+    .clearCookie("refreshtoken", options)
+    .json(
+    new ApiResponse(
+        OK,
+        {},
+        "Github account deleted successfully !"))
+})
+
+const SendOTPGithubUser = AsyncHandler(async(req, res)=>{
+    const userId = req.user?._id
+    const user = await GithubUser.findById(userId)
+    if (!user) {
+        throw new ApiError(404, "User not found !")
+    }
+    const otp = await user.genOTP()
+    await user.save()
+    await sendOTPEmail(user.ghEmail, otp)
+
+    return res
+    .status(OK)
+    .json(
+        new ApiResponse
+        (OK,
+        {},
+        "OTP sent to email successfully !"
+        ))
+})
+
+export {GithubLogin,
+        GithubCurrentUser,
+        LogoutGithubUser,
+        deleteGithubUser,
+        SendOTPGithubUser}

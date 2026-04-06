@@ -3,8 +3,11 @@ import AsyncHandler from "../utils/AsyncHandler.js"
 import ApiResponse from "../utils/ApiResponse.js"
 import ApiError from "../utils/ApiError.js"
 import { OK } from "../constants.js"
+import crypto from "node:crypto"
 import {v2 as cloudinary} from "cloudinary"
 import cloudUpload from "../utils/cloudinary.js"
+import {sendResetEmail,
+        sendOTPEmail} from "../utils/ResetPwdMail.js"
 
 const options = {
         httpOnly: true,
@@ -42,7 +45,8 @@ const registerUser = AsyncHandler(async(req, res)=>{
         coverimage : coverImage.url,
         username : username,
         email : email,
-        password : password
+        password : password,
+        usertype : [true, false]
     })
 
     console.log("user created")
@@ -54,17 +58,16 @@ const registerUser = AsyncHandler(async(req, res)=>{
         throw new ApiError(500, "Something went wrong while registering the user")
     }
 
-    const setusertype = await User.updateOne(
-        {_id : newUser._id},
-        {$set : {"usertype.0" : true}}
-    )
+    // const setusertype = await User.updateOne(
+    //     {_id : newUser._id},
+    //     {$set : {"usertype.0" : true}}
+    // )
 
-    if (!setusertype) {
-        console.log("user not created")
-        throw new ApiError(500, "Something went wrong while registering the user")
-    }
+    // if (!setusertype) {
+    //     console.log("user not created")
+    //     throw new ApiError(500, "Something went wrong while registering the user")
+    // }
 
-    const updatedUser = await User.findById(newUser._id).select("-password -email -refreshtoken")
 
     const {access_token, refresh_token} = await genToken(newUser._id)
 
@@ -75,15 +78,15 @@ const registerUser = AsyncHandler(async(req, res)=>{
     .json(new ApiResponse(
         OK,
         {
-            coverimage : newUser.coverimage,
-            username: newUser.username,
-            email : newUser.email,
+            coverimage : createdUser.coverimage,
+            username: createdUser.username,
+            email : createdUser.email,
             userExists : true,
             oldUser : false,
             firstload : true,
-            masteruser : newUser.masteruser,
-            ghEmail : newUser.ghEmail,
-            usertype : updatedUser.usertype,
+            masteruser : createdUser.masteruser,
+            ghEmail : createdUser.ghEmail,
+            usertype : createdUser.usertype,
         },
         "User sign up succes"
     ))
@@ -200,9 +203,8 @@ const updateCoverImage = AsyncHandler(async(req, res) => {
         const parts = oldimgurl.split("/")
         const filename = parts[parts.length - 1].split(".")[0]
         const folder = parts[parts.length - 2] // normaluser
-const   parent = parts[parts.length - 3] // users
-
-const   fileid = `${parent}/${folder}/${filename}`
+        const parent = parts[parts.length - 3] // users
+        const fileid = `${parent}/${folder}/${filename}`
         const res = await cloudinary.uploader.destroy(fileid)
 
         if(res.result !== "ok" && res.result !== "not found"){
@@ -323,6 +325,149 @@ const UnLinkGithubUser = AsyncHandler(async(req, res)=>{
         ))
 })
 
+const SendPwdResetLink = AsyncHandler(async(req, res) =>{
+    const {email} = req.body
+    const user = await User.findOne({email})
+    if(!user){
+        throw new ApiError(401, "No such email exists!")
+    }
+
+    const token = await user.genResetToken()
+    await user.save({ validateBeforeSave: false })
+
+    const resetURL = `${process.env.CORS_ORIGIN}/reset-pwd/${token}`
+    await sendResetEmail(user.email, resetURL)
+
+    return res
+    .status(OK)
+    .json(
+        new ApiResponse
+        (OK,
+        {},
+        "Password reset link sent to email"
+        ))
+})
+
+const VerifyResetTokenExpiry = AsyncHandler(async(req, res)=>{
+        const { token } = req.body
+        const hashed_token = crypto.createHash("sha256").update(token).digest("hex")
+        const user = await User.findOne({
+        resetPasswordToken : hashed_token,
+        resetPasswordExpiry: { $gt: Date.now() }
+    })
+
+     if (!user) {
+        throw new ApiError(400, "Token is expired or Invalid!")
+    }
+     return res
+    .status(OK)
+    .json(
+        new ApiResponse
+        (OK,
+        {},
+        "Token is valid !"
+        ))
+
+})
+
+const ResetPassword = AsyncHandler(async(req, res)=>{
+    const { token } = req.params
+    const { password } = req.body
+
+    const hashed_token = crypto.createHash("sha256").update(token).digest("hex")
+
+    const user = await User.findOne({
+        resetPasswordToken : hashed_token,
+        resetPasswordExpiry: { $gt: Date.now() }
+    })
+
+     if (!user) {
+        throw new ApiError(400, "Token is expired !")
+    }
+    user.password = password
+    user.resetPasswordToken = ""
+    user.resetPasswordExpiry = ""
+
+    await user.save()
+
+    return res
+    .status(OK)
+    .json(
+        new ApiResponse
+        (OK,
+        {},
+        "Password reset successfully !"
+        ))
+})
+
+const deleteUser = AsyncHandler(async(req, res)=>{
+    const {otp} = req.body
+    const userId = req.user?._id
+    const user = await User.findById(userId)
+     if (!user) {
+        throw new ApiError(404, "User not found")
+    }
+
+    if (!user.otpExpiry || user.otpExpiry < Date.now()) {
+        throw new ApiError(400, "OTP expired!")
+    }
+
+    const otpvalid = await user.isOTPCorrect(otp)
+    if(!otpvalid){
+        throw new ApiError(400, "OTP not valid!")
+    }
+    const image = user?.coverimage
+
+    if(image){
+    const parts = image.split("/")
+    const filename = parts[parts.length - 1].split(".")[0]
+    const folder = parts[parts.length - 2] // normaluser
+    const parent = parts[parts.length - 3] // users
+    const fileid = `${parent}/${folder}/${filename}`
+    const res_i = await cloudinary.uploader.destroy(fileid)
+
+    if(res_i.result !== "ok" && res_i.result !== "not found"){
+        throw new ApiError(500, "Failed to delete old cover image")
+    }
+}
+    console.log("image deleted")
+
+    await user.deleteOne()
+    console.log("user deleted")
+
+    return res
+    .status(200)
+    .clearCookie("accesstoken", options)
+    .clearCookie("refreshtoken", options)
+    .json(
+    new ApiResponse(
+        OK,
+        {},
+        "Account deleted successfully !"))
+})
+
+const SendOTPUser = AsyncHandler(async(req, res)=>{
+    const userId = req.user?._id
+
+    const user = await User.findById(userId)
+    if (!user) {
+        throw new ApiError(404, "User not found !")
+    }
+    const otp = await user.genOTP()
+    await user.save()
+    await sendOTPEmail(user.email, otp)
+
+    return res
+    .status(OK)
+    .json(
+        new ApiResponse
+        (OK,
+        {},
+        "OTP sent to email successfully !"
+        ))
+
+})
+
 export {loginUser,
     registerUser,
     getCurrentUser,
@@ -331,5 +476,10 @@ export {loginUser,
     checkUsername,
     updatePassword,
     LinkGithubUser,
-    UnLinkGithubUser
+    UnLinkGithubUser,
+    SendPwdResetLink,
+    ResetPassword,
+    deleteUser,
+    SendOTPUser,
+    VerifyResetTokenExpiry
 }

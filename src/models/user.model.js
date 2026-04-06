@@ -1,5 +1,6 @@
 import mongoose, {Schema} from 'mongoose'
 import bcrypt from "bcrypt"
+import crypto from "node:crypto"
 import TokenCreate from '../utils/TokenCreate.js'
 
 const UserSchema = new Schema({
@@ -30,7 +31,11 @@ const UserSchema = new Schema({
         type : [Boolean],
         default : () => Array(2).fill(false)
     },
-    refreshtoken : {type: String}
+    refreshtoken : {type: String},
+    resetPasswordToken: {type: String},
+    resetPasswordExpiry: {type: Date},
+    otp: {type: String},
+    otpExpiry: {type: Date},
 }, { versionKey: false})
 
 UserSchema.pre("save", async function (next) {
@@ -62,6 +67,27 @@ UserSchema.methods.genRefreshToken = function () {
         },
         false
 )}
+
+UserSchema.methods.genResetToken = async function () {
+    const token = crypto.randomBytes(32).toString("hex")
+    this.resetPasswordToken = crypto.createHash("sha256").update(token).digest("hex")
+    this.resetPasswordExpiry = Date.now() + 1000*60*10
+
+    return token
+}
+
+UserSchema.methods.genOTP = async function() {
+    const otp = crypto.randomInt(100000, 1000000).toString() // 6 digit OTP
+    this.otp = await bcrypt.hash(otp, 10)
+    this.otpExpiry = Date.now() + 5 * 60 * 1000
+
+    return otp
+}
+
+UserSchema.methods.isOTPCorrect = async function (otp) {
+     if (!this.otp) return false
+    return await bcrypt.compare(otp, this.otp)
+}
 
 const User = mongoose.model('Users', UserSchema)
 

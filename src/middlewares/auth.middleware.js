@@ -3,9 +3,9 @@ import AsyncHandler from "../utils/AsyncHandler.js"
 import { GithubUser } from "../models/githubuser.model.js"
 import { User } from "../models/user.model.js"
 import jwt from "jsonwebtoken"
-import dotenv from "dotenv"
+// import dotenv from "dotenv"
 
-dotenv.config({})
+// dotenv.config({})
 
 // for Github database
 const verifyGithubJWT =

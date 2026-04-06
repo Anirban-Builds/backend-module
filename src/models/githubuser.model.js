@@ -1,3 +1,5 @@
+import bcrypt from "bcrypt"
+import crypto from "node:crypto"
 import mongoose, {Schema} from 'mongoose'
 import TokenCreate from '../utils/TokenCreate.js'
 import { GH_LOGO } from '../constants.js'
@@ -17,7 +19,9 @@ const GithubUserSchema = new Schema({
         type : [Boolean],
         default : () => Array(2).fill(false)
     },
-    refreshtoken : {type: String}
+    refreshtoken : {type: String},
+    otp: {type: String},
+    otpExpiry: {type: Date},
 }, { versionKey: false })
 
 
@@ -38,6 +42,18 @@ GithubUserSchema.methods.genRefreshToken = function () {
         },
         false
 )}
+
+GithubUserSchema.methods.genOTP = async function() {
+    const otp = crypto.randomInt(100000, 1000000).toString()
+    this.otp = await bcrypt.hash(otp, 10)
+    this.otpExpiry = Date.now() + 5 * 60 * 1000
+
+    return otp
+}
+
+GithubUserSchema.methods.isOTPCorrect = async function (otp) {
+    return await bcrypt.compare(otp, this.otp)
+}
 
 const GithubUser = mongoose.model('GithubUsers', GithubUserSchema)
 

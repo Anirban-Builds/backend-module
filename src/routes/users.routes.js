@@ -2,7 +2,9 @@ import { Router } from "express"
 import {
     GithubLogin,
     GithubCurrentUser,
-    LogoutGithubUser} from "../controllers/githubuser.controller.js"
+    LogoutGithubUser,
+    deleteGithubUser,
+    SendOTPGithubUser } from "../controllers/githubuser.controller.js"
 import {
     loginUser,
     registerUser,
@@ -12,7 +14,13 @@ import {
     updatePassword,
     updateCoverImage,
     LinkGithubUser,
-    UnLinkGithubUser } from "../controllers/user.controller.js"
+    UnLinkGithubUser,
+    SendPwdResetLink,
+    ResetPassword,
+    deleteUser,
+    SendOTPUser,
+    VerifyResetTokenExpiry
+    } from "../controllers/user.controller.js"
 import { verifyGithubJWT, verifyJWT } from "../middlewares/auth.middleware.js"
 import { upload } from "../middlewares/multer.middleware.js"
 const UserRouter = Router()
@@ -29,6 +37,13 @@ UserRouter.route('/logout').get(verifyJWT, logoutUser)
 UserRouter.route('/users').get(verifyJWT, getCurrentUser)
 UserRouter.route('/check-uname').get(checkUsername)
 UserRouter.route('/update-pwd').patch(verifyJWT, updatePassword)
+UserRouter.route('/forgot-pwd').post(SendPwdResetLink)
+UserRouter.route('/reset-pwd/:token').post(ResetPassword)
+UserRouter.route('/delete-user').delete(verifyJWT, deleteUser)
+UserRouter.route('/delete-ghuser').delete(verifyGithubJWT, deleteGithubUser)
+UserRouter.route('/usr-otp').post(verifyJWT, SendOTPUser)
+UserRouter.route('/ghusr-otp').post(verifyGithubJWT, SendOTPGithubUser)
+UserRouter.route('/verify-token').post(VerifyResetTokenExpiry)
 UserRouter.route('/update-cover-image').patch(verifyJWT, upload.single("coverimage"), updateCoverImage)
 
 export default UserRouter

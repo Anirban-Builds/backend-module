@@ -1,0 +1,24 @@
+name: Login Flow Test
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+      - run: npm install
+      - run: npm run start:test &
+      - run: npx wait-on ${{vars.BASE_ENDPOINT}}
+      - run: node tests/login.test.js
+        env:
+          BASE_URL: ${{vars.BASE_ENDPOINT}}
+          TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
+          TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}

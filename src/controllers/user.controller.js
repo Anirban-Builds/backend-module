@@ -58,17 +58,6 @@ const registerUser = AsyncHandler(async(req, res)=>{
         throw new ApiError(500, "Something went wrong while registering the user")
     }
 
-    // const setusertype = await User.updateOne(
-    //     {_id : newUser._id},
-    //     {$set : {"usertype.0" : true}}
-    // )
-
-    // if (!setusertype) {
-    //     console.log("user not created")
-    //     throw new ApiError(500, "Something went wrong while registering the user")
-    // }
-
-
     const {access_token, refresh_token} = await genToken(newUser._id)
 
     return res

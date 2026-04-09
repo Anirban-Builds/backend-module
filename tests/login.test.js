@@ -1,7 +1,6 @@
 import 'dotenv/config'
 import {exec} from 'child_process'
 import util from 'util'
-import { OK } from '../src/constants'
 
 const execAsync = util.promisify(exec)
 
@@ -18,7 +17,7 @@ const TestLogin = async()=>{
     const { stdout} = await execAsync(command)
     const [body, status] = stdout.split('\n')
     const response = JSON.parse(body)
-     if (status !== `${OK}`) {
+     if (status !== `200`) {
       throw new Error(`Status ${status}: ${JSON.stringify(response)}`)
     }
 

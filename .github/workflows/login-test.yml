@@ -16,7 +16,7 @@ jobs:
           node-version: lts/*
       - run: npm install
       - run : npm run start &
-      - run : npm wait-on ${{ vars.BASE_URL }}
+      - run : npx wait-on ${{ vars.BASE_URL }}
       - run: node tests/login.test.js
         env:
           BASE_URL: ${{vars.BASE_URL}}

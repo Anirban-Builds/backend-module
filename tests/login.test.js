@@ -15,10 +15,8 @@ const TestLogin = async()=>{
         "username" : "${process.env.TEST_USERNAME}",
         "password": "${process.env.TEST_PASSWORD}"
     }'`
-    console.log(command)
-    const { stdout, stderr} = await execAsync(command)
-    console.log("STDERR >>>", stderr)
-    console.log("STDOUT >>>", stdout)
+
+    const { stdout } = await execAsync(command)
     const [body, status] = stdout.split('\n')
     const response = JSON.parse(body)
      if (status !== `200`) {

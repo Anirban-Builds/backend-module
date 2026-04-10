@@ -25,9 +25,7 @@ app.get("/", (req, res) => {
 })
 
 app.get(`/api/${process.env.API_VERSION}`, (req, res) => {
-  res.json({
-    status: "API is running 🚀",
-  })
+  res.send( "API is running 🚀")
 })
 
 export default app

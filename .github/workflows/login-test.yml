@@ -16,7 +16,7 @@ jobs:
           node-version: lts/*
       - run: npm install
       - run : npm run start &
-      - run : npx wait-on ${{ vars.BASE_URL }}
+      - run : npx wait-on ${{ vars.BASE_URL }} # wait for backend server
       - run: node tests/login.test.js
         env:
           API_VERSION: ${{ vars.API_VERSION }}

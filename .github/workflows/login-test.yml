@@ -24,7 +24,7 @@ jobs:
           CORS_ORIGIN: ${{ vars.CORS_ORIGIN }}
           PORT: ${{ vars.PORT }}
           ACCESS_TOKEN_EXPIRY: ${{ vars.ACCESS_TOKEN_EXPIRY }}
-          REFRESH_TOKEN_EXPIRY: ${{ vars.REFRESH_TOKEN_SECRET }}
+          REFRESH_TOKEN_EXPIRY: ${{ vars.REFRESH_TOKEN_EXPIRY }}
 
           ACCESS_TOKEN_SECRET: ${{ secrets.ACCESS_TOKEN_SECRET }}
           REFRESH_TOKEN_SECRET: ${{ secrets.REFRESH_TOKEN_SECRET }}

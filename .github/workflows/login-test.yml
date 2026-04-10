@@ -19,7 +19,21 @@ jobs:
       - run : npx wait-on ${{ vars.BASE_URL }}
       - run: node tests/login.test.js
         env:
+          API_VERSION: ${{ vars.API_VERSION }}
           BASE_URL: ${{ vars.BASE_URL }}
-          API_VERSION : ${{ vars.API_VERSION }}
+          CORS_ORIGIN: ${{ vars.CORS_ORIGIN }}
+          PORT: ${{ vars.PORT }}
+          ACCESS_TOKEN_EXPIRY: ${{ vars.ACCESS_TOKEN_EXPIRY }}
+          REFRESH_TOKEN_EXPIRY: ${{ vars.REFRESH_TOKEN_SECRET }}
+
+          ACCESS_TOKEN_SECRET: ${{ secrets.ACCESS_TOKEN_SECRET }}
+          REFRESH_TOKEN_SECRET: ${{ secrets.REFRESH_TOKEN_SECRET }}
+
+          CLOUDINARY_API_KEY: ${{ secrets.CLOUDINARY_API_KEY }}
+          CLOUDINARY_API_SECRET: ${{ secrets.CLOUDINARY_API_SECRET }}
+          CLOUDINARY_CLOUD_NAME: ${{ secrets.CLOUDINARY_CLOUD_NAME }}
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+
           TEST_USERNAME: ${{ secrets.TEST_USERNAME }}
           TEST_PASSWORD: ${{ secrets.TEST_PASSWORD }}

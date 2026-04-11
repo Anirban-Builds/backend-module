@@ -47,6 +47,8 @@ jobs:
           npm run start &
           npx wait-on ${{ vars.BASE_URL }} # wait for backend server
           node tests/login.test.js
+      - if: failure()
+        run: git push origin --delete ${{ github.ref_name }}
 
   create-pr:
     needs: login-flow-test

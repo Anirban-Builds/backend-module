@@ -5,7 +5,7 @@ import ApiResponse from "../utils/ApiResponse.js"
 import { OK } from "../constants.js"
 
 const handleInboxMail = Asynchandler(async(req, res)=>{
-     const { data } = req.body
+     const data = req.body
      console.log(data)
      const { from, subject, text } = data || {}
     if (!from) {

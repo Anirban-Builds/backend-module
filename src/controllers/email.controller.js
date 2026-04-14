@@ -5,13 +5,12 @@ import ApiResponse from "../utils/ApiResponse.js"
 import { OK } from "../constants.js"
 
 const handleInboxMail = Asynchandler(async(req, res)=>{
-     const data = req.body
-     console.log(data)
-     const { from, subject, text } = data || {}
-    if (!from) {
+     const {data} = req.body
+     const payload = data?.data || data
+    if (!payload?.email_id) {
     throw new ApiError(400, "Missing sender email")
     }
-    await forwardMail({ from, subject, text : text || "" })
+    await forwardMail(payload)
 
     return res
         .status(OK)

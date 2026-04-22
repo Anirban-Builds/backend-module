@@ -1,6 +1,10 @@
 services:
   - type: web
     name: dev-web-backend
+    runtime: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    previewStartCommand: npm run dev
     envVars:
       - fromGroup: preview
       - key: APP_MODE

@@ -7,7 +7,7 @@ function ship($name, $msg) {
     git checkout master
     git branch -D $name
 
-    Write-Host "Push Successfull 🚀" -ForegroundColor Green
+    Write-Host "Push Successfull 🚀" -ForegroundColor Green -BackgroundColor White
     $merged = $false
     $attempts = 0
     $dotCount = 0

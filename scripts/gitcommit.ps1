@@ -10,5 +10,5 @@ function ship($branch, $message) {
 
     $current = $(git branch --show-current)
     Write-Host "`n$current updated locally ✅" -ForegroundColor Green
-    Write-Host " 🚀 Deployment initiated! " -ForegroundColor Cyan
+    Write-Host "Deployment initiated! 🚀" -ForegroundColor Cyan
 }

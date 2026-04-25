@@ -22,6 +22,8 @@ const GithubUserSchema = new Schema({
     refreshtoken : {type: String},
     otp: {type: String},
     otpExpiry: {type: Date},
+    githubToken : {type: String, default:"" },
+    starred_repo : {type : [mongoose.Schema.Types.ObjectId]}
 }, { versionKey: false })
 
 

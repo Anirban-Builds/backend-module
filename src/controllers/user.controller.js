@@ -8,6 +8,7 @@ import {v2 as cloudinary} from "cloudinary"
 import cloudUpload from "../utils/cloudinary.js"
 import {sendResetEmail,
         sendOTPEmail} from "../utils/SendMail.js"
+import { GithubUser } from "../models/githubuser.model.js"
 
 const options = {
         httpOnly: true,
@@ -76,6 +77,7 @@ const registerUser = AsyncHandler(async(req, res)=>{
             masteruser : createdUser.masteruser,
             ghEmail : createdUser.ghEmail,
             usertype : createdUser.usertype,
+            repolist : []
         },
         "User sign up succes"
     ))
@@ -104,6 +106,10 @@ const loginUser = AsyncHandler(async(req, res) => {
     }
 
     const oldUser = await User.findById(user._id).select("-password -refreshtoken")
+    let linkedUser
+    if(oldUser.usertype[1]){ // account linked
+       linkedUser = await GithubUser.findOne({ghEmail : oldUser.ghEmail})
+    }
 
     const {access_token, refresh_token} = await genToken(oldUser._id)
 
@@ -124,7 +130,8 @@ const loginUser = AsyncHandler(async(req, res) => {
                 masteruser : oldUser.masteruser,
                 ghEmail : oldUser.ghEmail,
                 usertype : oldUser.usertype,
-                avatar : oldUser.avatar
+                avatar : oldUser.avatar,
+                repolist : linkedUser? linkedUser.starred_repo : []
             },
             "User logged In Successfully"
         )
@@ -146,7 +153,8 @@ const getCurrentUser = AsyncHandler( async(req, res) =>{
             masteruser : req.user.masteruser,
             ghEmail : req.user.ghEmail,
             usertype : req.user.usertype,
-            avatar : req.user.avatar
+            avatar : req.user.avatar,
+            repolist : req.user.repolist
         },
         "User fetched successfully"
     ))
@@ -170,6 +178,8 @@ const logoutUser = AsyncHandler(async(req, res) => {
         .status(200)
         .clearCookie("accesstoken", options)
         .clearCookie("refreshtoken", options)
+        .clearCookie("gh_accesstoken", options)
+        .clearCookie("gh_refreshtoken", options)
         .json(
             new ApiResponse(
                 OK,
@@ -300,13 +310,17 @@ const UnLinkGithubUser = AsyncHandler(async(req, res)=>{
 
     const curUser = await User.updateOne(
                             {email : email},
-                            {$set: { ghEmail: "", avatar : "", "usertype.1" : false }}
+                            {$set: { ghEmail: "",
+                                     avatar : "",
+                                     "usertype.1" : false }}
                             )
     if(curUser.modifiedCount!==1){
-        throw new ApiError(401, "User Github Unlinking failed")
+        throw new ApiError(401, "User Github unlinking failed")
     }
     return res
     .status(OK)
+    .clearCookie("gh_accesstoken", options)
+    .clearCookie("gh_refreshtoken", options)
     .json(
         new ApiResponse
         (OK,

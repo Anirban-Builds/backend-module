@@ -4,6 +4,7 @@ import ApiResponse from "../utils/ApiResponse.js"
 import {GithubUser} from "../models/githubuser.model.js"
 import { OK } from "../constants.js"
 import { sendOTPEmail } from "../utils/SendMail.js"
+import { encryptfunc, decryptfunc } from "../utils/TokenCrypto.js"
 
 const options = {
         httpOnly: true,
@@ -47,6 +48,7 @@ const params = "?client_id=" + payload.client_id +
 
     const tokenData = await tokenReq.json()
     const token = tokenData.access_token
+    const encryptedToken = encryptfunc(token)
     const userRes = await fetch('https://api.github.com/user', {
             headers: { Authorization: `token ${token}` }
 })
@@ -70,10 +72,12 @@ const params = "?client_id=" + payload.client_id +
             username : userData.login,
             ghEmail : githubEmail,
             avatar : userData.avatar_url,
-            usertype : [false, true]
+            usertype : [false, true],
+            githubToken : encryptedToken
         })
 
-        const createdUser = await GithubUser.findById(newUser._id).select("-refreshtoken")
+        const createdUser = await GithubUser.findById(newUser._id)
+        .select("-refreshtoken -githubToken -otp")
 
         if (!createdUser) {
         throw new ApiError(500, "Something went wrong while registering the user")
@@ -99,6 +103,7 @@ const params = "?client_id=" + payload.client_id +
             oldUser : false,
             firstload : true,
             usertype : createdUser.usertype,
+            repolist : createdUser.starred_repo
         },
         "Github user sign up success"
     ))
@@ -106,7 +111,8 @@ const params = "?client_id=" + payload.client_id +
 
     // already github logged
     else{
-    const oldUser = await GithubUser.findById(userExists._id).select("-refreshtoken")
+    const oldUser = await GithubUser.findById(userExists._id)
+    .select("-refreshtoken -githubToken -otp")
     const {access_token, refresh_token} = await genToken(oldUser._id)
 
     return res
@@ -125,6 +131,7 @@ const params = "?client_id=" + payload.client_id +
             userExists : true,
             firstload : true,
             usertype : oldUser.usertype,
+            repolist : oldUser.starred_repo
         },
         "Github login success"
     ))
@@ -147,6 +154,7 @@ const GithubCurrentUser = AsyncHandler(async(req, res) =>{
             githubuser : true,
             firstload : false,
             usertype : req.user.usertype,
+            repolist : req.user.repolist
         },
         "User fetched successfully"
     ))
@@ -229,8 +237,42 @@ const SendOTPGithubUser = AsyncHandler(async(req, res)=>{
         ))
 })
 
+const StarRepoGithubUser = AsyncHandler(async(req, res)=>{
+   const { owner, repo, projId } = req.body
+
+    const user = await GithubUser.findById(req.user._id)
+    const isStarred = user.starred_repo.includes(projId)
+    // if repo exists request is for unstaring
+
+    const token = decryptfunc(user.githubToken)
+
+    await fetch(`https://api.github.com/user/starred/${owner}/${repo}`, {
+        method: isStarred ? 'DELETE' : 'PUT',
+        headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Length': '0'
+        }
+    })
+
+    await GithubUser.findByIdAndUpdate(req.user._id,
+        isStarred
+        ? { $pull: { starred_repo: projId } }
+        : { $addToSet: { starred_repo: projId } }
+    )
+
+    return res
+    .status(OK)
+    .json(
+    new ApiResponse(
+    OK,
+    {isStarred:!isStarred },
+    `Repo ${isStarred ? "unstarred" : "starred"} succesfully`))
+
+})
+
 export {GithubLogin,
         GithubCurrentUser,
         LogoutGithubUser,
         deleteGithubUser,
-        SendOTPGithubUser}
+        SendOTPGithubUser,
+        StarRepoGithubUser}

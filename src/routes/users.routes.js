@@ -4,7 +4,8 @@ import {
     GithubCurrentUser,
     LogoutGithubUser,
     deleteGithubUser,
-    SendOTPGithubUser } from "../controllers/githubuser.controller.js"
+    SendOTPGithubUser,
+    StarRepoGithubUser } from "../controllers/githubuser.controller.js"
 import {
     loginUser,
     registerUser,
@@ -45,5 +46,6 @@ UserRouter.route('/usr-otp').post(verifyJWT, SendOTPUser)
 UserRouter.route('/ghusr-otp').post(verifyGithubJWT, SendOTPGithubUser)
 UserRouter.route('/verify-token').post(VerifyResetTokenExpiry)
 UserRouter.route('/update-cover-image').patch(verifyJWT, upload.single("coverimage"), updateCoverImage)
+UserRouter.route('/star-repo').post(verifyGithubJWT, StarRepoGithubUser)
 
 export default UserRouter

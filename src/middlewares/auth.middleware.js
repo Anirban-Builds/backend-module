@@ -24,7 +24,6 @@ const verifyGithubJWT =
             try{decodedToken = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET)}
             catch{/* */}
         }
-        console.log("decodedToken:", decodedToken ? "valid" : "null")
 
         const user = await GithubUser.findById(decodedToken?._id).select("-refreshtoken")
 
@@ -59,7 +58,6 @@ const verifyJWT =
             try{decodedToken = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET)}
             catch{/* */}
         }
-        console.log("decodedToken:", decodedToken ? "valid" : "null")
 
         const user = await User.findById(decodedToken?._id).select("-refreshtoken")
 
@@ -91,7 +89,6 @@ const verifyAnyJWT = AsyncHandler(async (req, res, next) => {
         try { decodedToken = jwt.verify(token, process.env.REFRESH_TOKEN_SECRET) }
         catch {/**/}
     }
-    console.log("decodedToken:", decodedToken ? "valid" : "null")
 
     let user = await User.findById(decodedToken?._id).select("-refreshtoken") ||
                await GithubUser.findById(decodedToken?._id).select("-refreshtoken")

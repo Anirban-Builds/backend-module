@@ -87,8 +87,6 @@ const params = "?client_id=" + payload.client_id +
 
     const {access_token, refresh_token} = await genToken(newUser._id)
 
-    console.log("github user created")
-
     return res
     .status(OK)
     .cookie("gh_accesstoken", access_token, options)
@@ -213,8 +211,7 @@ const deleteGithubUser = AsyncHandler(async(req, res)=>{
     }
 
     await user.deleteOne()
-    console.log("github user deleted")
-
+    
     return res
     .status(200)
     .clearCookie("accesstoken", options)

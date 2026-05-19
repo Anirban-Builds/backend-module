@@ -36,7 +36,6 @@ const Addproject = AsyncHandler(async (req, res) => {
     if(!projectcard){
         throw new ApiError(400, "Project not created")
     }
-    console.log("project created")
     // Add project title keywords
     const kwords = projTitle.split(" ")
     let kwordmap
@@ -61,7 +60,6 @@ const Addproject = AsyncHandler(async (req, res) => {
     if(!kwordmap){
         throw new ApiError(400, "Error adding project keywords")
     }
-    console.log("project keywords added")
     //Add project tags for search
     let tres
     for(let i=0; i<tags.length; i++){
@@ -82,7 +80,6 @@ const Addproject = AsyncHandler(async (req, res) => {
     if(!tres){
         throw new ApiError(400, "Error adding project tags")
     }
-    console.log("project tags added")
     return res.status(OK).json(
         new ApiResponse(OK, {}, "Project added Successfully")
     )
@@ -154,20 +151,12 @@ const Deleteproject = AsyncHandler(async (req, res)=>{
     if(!req.user?.masteruser){
         throw new ApiError(403, "Unauthorized Access")
     }
-
     const { projId, projTitle, projTags } = req.body
     const tags = JSON.parse(projTags)
-
-    console.log("projId:", projId)
-    console.log("projTitle:", projTitle)
-    console.log("tags:", tags)
     const projDelete = await ProjectCard.findByIdAndDelete(projId)
     if(!projDelete){
         throw new ApiError(400, "Failed to delete project")
     }
-    // console.log("projDelete:", projDelete)
-    console.log("project deleted")
-
     const kwords = projTitle.split(" ") // list of title words
     for (let i = 0; i < kwords.length; i++) {
         let prefix = []
@@ -180,7 +169,6 @@ const Deleteproject = AsyncHandler(async (req, res)=>{
         }
     }
     await projectTitle.deleteMany({ kmap: { $size: 0 } })
-    console.log("project keywords removed")
 
     for (let i = 0; i < tags.length; i++) {
         await ProjectTags.findOneAndUpdate(
@@ -188,7 +176,6 @@ const Deleteproject = AsyncHandler(async (req, res)=>{
             { $pull: { tmap: projId } }
         )
     }
-    console.log("project tags removed")
 
     return res.status(OK).json(
         new ApiResponse(

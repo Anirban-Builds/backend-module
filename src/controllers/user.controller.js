@@ -40,8 +40,6 @@ const registerUser = AsyncHandler(async(req, res)=>{
         throw new ApiError(400, "Image failed to upload on cloudinary")
     }
 
-    console.log("image uploaded")
-
     const newUser = await User.create({
         coverimage : coverImage.url,
         username : username,
@@ -50,12 +48,9 @@ const registerUser = AsyncHandler(async(req, res)=>{
         usertype : [true, false]
     })
 
-    console.log("user created")
-
     const createdUser = await User.findById(newUser._id).select("-password -ghEmail -refreshtoken")
 
     if (!createdUser) {
-        console.log("user not created")
         throw new ApiError(500, "Something went wrong while registering the user")
     }
 
@@ -444,10 +439,7 @@ const deleteUser = AsyncHandler(async(req, res)=>{
         throw new ApiError(500, "Failed to delete old cover image")
     }
 }
-    console.log("image deleted")
-
     await user.deleteOne()
-    console.log("user deleted")
 
     return res
     .status(200)
